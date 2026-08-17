@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Squat Coach Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">SQ</div>
+          <div>
+            <h1>Squat Coach</h1>
+            <p>力量训练动作实时反馈原型</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span class="privacy-pill">
+            <svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+            本地处理
+          </span>
+          <button id="resetBtn" class="icon-button" type="button" aria-label="重置">
+            <svg class="icon" aria-hidden="true"><use href="#icon-rotate"></use></svg>
+            <span>重置</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="stage" aria-label="动作识别画面">
+          <div class="video-wrap">
+            <video id="video" playsinline muted></video>
+            <canvas id="overlay"></canvas>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <div class="empty-icon">
+              <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg>
+            </div>
+            <h2>准备开始</h2>
+            <p>侧对镜头识别最稳，正面仅用于膝内扣观察</p>
+          </div>
+
+          <div id="trackingStatus" class="tracking-status">正在加载模型</div>
+
+          <div class="stage-controls">
+            <div class="segmented" role="group" aria-label="分析视角">
+              <button type="button" class="segmented-button active" data-view="auto">自动</button>
+              <button type="button" class="segmented-button" data-view="side">侧面</button>
+              <button type="button" class="segmented-button" data-view="front">正面</button>
+            </div>
+            <button id="cameraBtn" class="button primary" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#icon-video"></use></svg>
+              启动摄像头
+            </button>
+            <button id="uploadBtn" class="button secondary" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#icon-upload"></use></svg>
+              上传视频
+            </button>
+            <input id="videoInput" type="file" accept="video/*" hidden />
+            <button id="demoBtn" class="button secondary" type="button">
+              <svg class="icon" aria-hidden="true"><use href="#icon-play"></use></svg>
+              演示模式
+            </button>
+          </div>
+        </section>
+
+        <aside class="sidebar" aria-label="训练指标">
+          <section class="panel summary-panel">
+            <div class="summary-item">
+              <span>次数</span>
+              <strong id="repCount">0</strong>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+              <span>阶段</span>
+              <strong id="phase">待机</strong>
+            </div>
+          </section>
+
+          <section class="panel score-panel">
+            <div id="scoreRing" class="score-ring">--</div>
+            <div class="score-copy">
+              <span>动作质量</span>
+              <strong id="scoreText">等待动作</strong>
+            </div>
+          </section>
+
+          <section class="panel metrics-panel">
+            <div class="panel-heading">
+              <h2>实时指标</h2>
+              <span id="metricMode">自动</span>
+            </div>
+            <div class="metric-list">
+              <div class="metric-row">
+                <span>膝角</span>
+                <strong id="kneeMetric">--</strong>
+              </div>
+              <div class="metric-row">
+                <span>髋角</span>
+                <strong id="hipMetric">--</strong>
+              </div>
+              <div class="metric-row">
+                <span>躯干倾角</span>
+                <strong id="torsoMetric">--</strong>
+              </div>
+              <div class="metric-row">
+                <span id="extraMetricLabel">膝前移</span>
+                <strong id="extraMetric">--</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel feedback-panel">
+            <div class="panel-heading">
+              <h2>即时反馈</h2>
+              <span class="feedback-dot"></span>
+            </div>
+            <div id="feedbackMessage" class="feedback-message">侧对镜头，保持全身入镜后开始深蹲。</div>
+            <div id="feedbackHistory" class="feedback-history"></div>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        仅用于课堂原型演示。视频和关键点数据在浏览器本地处理，不会上传。
+      </footer>
+    </div>
+
+    <svg class="svg-defs" aria-hidden="true">
+      <defs>
+        <symbol id="icon-shield" viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+          <path d="m9 12 2 2 4-4"></path>
+        </symbol>
+        <symbol id="icon-rotate" viewBox="0 0 24 24">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+          <path d="M21 3v6h-6"></path>
+        </symbol>
+        <symbol id="icon-camera" viewBox="0 0 24 24">
+          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"></path>
+          <circle cx="12" cy="13" r="3"></circle>
+        </symbol>
+        <symbol id="icon-video" viewBox="0 0 24 24">
+          <path d="m22 8-6 4 6 4V8Z"></path>
+          <rect x="2" y="6" width="14" height="12" rx="2"></rect>
+        </symbol>
+        <symbol id="icon-upload" viewBox="0 0 24 24">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <path d="m17 8-5-5-5 5"></path>
+          <path d="M12 3v12"></path>
+        </symbol>
+        <symbol id="icon-play" viewBox="0 0 24 24">
+          <polygon points="6 3 20 12 6 21 6 3"></polygon>
+        </symbol>
+      </defs>
+    </svg>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -44,6 +44,13 @@ writeFileSync(
     "/vendor/wasm/*.wasm",
     "  Content-Type: application/wasm",
     "",
+    "/models/*.task",
+    "  Content-Type: application/octet-stream",
+    "  Cache-Control: public, max-age=86400",
+    "",
+    "/vendor/*",
+    "  Cache-Control: public, max-age=86400",
+    "",
   ].join("\n"),
 );
 

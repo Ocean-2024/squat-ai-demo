@@ -147,6 +147,42 @@ const state = {
   },
 };
 
+async function loadModelWithProgress(url, onProgress) {
+  const response = await fetch(url, { cache: "force-cache" });
+
+  if (!response.ok) {
+    throw new Error(`Model request failed: ${response.status}`);
+  }
+
+  const total = Number(response.headers.get("Content-Length")) || 0;
+  const reader = response.body?.getReader();
+
+  if (!reader) {
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  const chunks = [];
+  let received = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    chunks.push(value);
+    received += value.length;
+
+    if (total > 0) {
+      onProgress?.(Math.round((received / total) * 100));
+    }
+  }
+
+  const buffer = await new Blob(chunks).arrayBuffer();
+  return new Uint8Array(buffer);
+}
+
 async function initPose() {
   if (state.poseReady) {
     return;
@@ -155,21 +191,31 @@ async function initPose() {
   setStatus("正在加载模型");
 
   try {
-    await createPose("GPU");
+    const modelBuffer = await loadModelWithProgress(modelPath, (percent) => {
+      setStatus(`正在加载模型 ${percent}%`);
+    });
+
+    try {
+      await createPose("GPU", modelBuffer);
+    } catch (error) {
+      console.warn("GPU delegate unavailable, falling back to CPU.", error);
+      await createPose("CPU", modelBuffer);
+    }
   } catch (error) {
-    console.warn("GPU delegate unavailable, falling back to CPU.", error);
-    await createPose("CPU");
+    console.error(error);
+    setStatus("模型加载失败，请检查网络后重试", true);
+    throw error;
   }
 }
 
-async function createPose(delegate) {
+async function createPose(delegate, modelBuffer) {
   const vision = await FilesetResolver.forVisionTasks(
     `${mediaPipeBase}/wasm`,
   );
 
   state.poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
     baseOptions: {
-      modelAssetPath: modelPath,
+      modelAssetBuffer: modelBuffer,
       delegate,
     },
     runningMode: "VIDEO",
@@ -216,7 +262,12 @@ async function stopCurrent() {
 }
 
 async function startCamera() {
-  await initPose();
+  try {
+    await initPose();
+  } catch (error) {
+    return;
+  }
+
   await stopCurrent();
 
   try {
@@ -249,7 +300,12 @@ async function startVideo(file) {
     return;
   }
 
-  await initPose();
+  try {
+    await initPose();
+  } catch (error) {
+    return;
+  }
+
   await stopCurrent();
 
   const url = URL.createObjectURL(file);
@@ -277,7 +333,12 @@ async function startVideo(file) {
 }
 
 async function startDemo() {
-  await initPose();
+  try {
+    await initPose();
+  } catch (error) {
+    return;
+  }
+
   await stopCurrent();
 
   state.mode = "demo";
@@ -1079,10 +1140,6 @@ resetBtn.addEventListener("click", resetSession);
 videoInput.addEventListener("change", () => startVideo(videoInput.files[0]));
 window.addEventListener("resize", resizeCanvas);
 
-initPose().catch((error) => {
-  console.error(error);
-  setStatus("模型加载失败，请刷新页面后重试", true);
-});
 
 if (new URLSearchParams(window.location.search).has("demo")) {
   initPose()

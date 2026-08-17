@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "python server.py 8000",
+    "build": "node scripts/build.mjs",
     "check": "node --check app.js"
   },
   "dependencies": {

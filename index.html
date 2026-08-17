@@ -158,6 +158,22 @@
       </defs>
     </svg>
 
-    <script type="module" src="./app.js"></script>
+    <script>
+  window.addEventListener("error", function (event) {
+    var status = document.querySelector("#trackingStatus");
+    if (status) {
+      status.textContent = "脚本加载失败：" + (event.message || "未知错误");
+      status.classList.add("is-warning");
+    }
+  });
+  window.addEventListener("unhandledrejection", function (event) {
+    var status = document.querySelector("#trackingStatus");
+    if (status && event.reason) {
+      status.textContent = "模型初始化失败：" + (event.reason.message || event.reason);
+      status.classList.add("is-warning");
+    }
+  });
+</script>
+<script type="module" src="./app.js"></script>
   </body>
 </html>

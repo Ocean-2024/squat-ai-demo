@@ -1,8 +1,19 @@
-import {
-  PoseLandmarker,
-  FilesetResolver,
-  DrawingUtils,
-} from "./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs";
+const visionBaseUrl = "./node_modules/@mediapipe/tasks-vision";
+let visionModule;
+let mediaPipeBase = visionBaseUrl;
+let modelPath = "./models/pose_landmarker_lite.task";
+
+try {
+  visionModule = await import(`${visionBaseUrl}/vision_bundle.mjs`);
+} catch (error) {
+  console.warn("Local MediaPipe bundle unavailable, falling back to CDN.", error);
+  mediaPipeBase = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21";
+  modelPath =
+    "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+  visionModule = await import(`${mediaPipeBase}/vision_bundle.mjs`);
+}
+
+const { PoseLandmarker, FilesetResolver, DrawingUtils } = visionModule;
 
 const video = document.querySelector("#video");
 const overlay = document.querySelector("#overlay");
@@ -153,12 +164,12 @@ async function initPose() {
 
 async function createPose(delegate) {
   const vision = await FilesetResolver.forVisionTasks(
-    "./node_modules/@mediapipe/tasks-vision/wasm",
+    `${mediaPipeBase}/wasm`,
   );
 
   state.poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
     baseOptions: {
-      modelAssetPath: "./models/pose_landmarker_lite.task",
+      modelAssetPath: modelPath,
       delegate,
     },
     runningMode: "VIDEO",

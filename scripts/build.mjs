@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
 const mediaPipeDir = resolve(root, "node_modules/@mediapipe/tasks-vision");
-const vendorDist = resolve(dist, "vendor/@mediapipe/tasks-vision");
+const vendorDist = resolve(dist, "vendor");
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(vendorDist, { recursive: true });
@@ -20,7 +20,7 @@ const builtApp = resolve(dist, "app.js");
 let appSource = readFileSync(builtApp, "utf8");
 appSource = appSource.replaceAll(
   "./node_modules/@mediapipe/tasks-vision",
-  "./vendor/@mediapipe/tasks-vision",
+  "./vendor",
 );
 writeFileSync(builtApp, appSource);
 
@@ -35,10 +35,10 @@ cpSync(resolve(mediaPipeDir, "wasm"), resolve(vendorDist, "wasm"), {
 writeFileSync(
   resolve(dist, "_headers"),
   [
-    "/vendor/@mediapipe/tasks-vision/vision_bundle.mjs",
+    "/vendor/vision_bundle.mjs",
     "  Content-Type: text/javascript",
     "",
-    "/vendor/@mediapipe/tasks-vision/wasm/*",
+    "/vendor/wasm/*",
     "  Content-Type: application/wasm",
     "",
   ].join("\n"),
